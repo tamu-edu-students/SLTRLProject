@@ -17,7 +17,7 @@ def stable_inverse_sigmoid(x, eps=0.01):
     x = (x * (1 - eps * 2)) + eps
     return torch.log(x / (1 - x))
 
-class SLTTransT(SiameseTracker):
+class ACSLTTransT(SiameseTracker):
 
     multiobj_mode = 'parallel'
 
