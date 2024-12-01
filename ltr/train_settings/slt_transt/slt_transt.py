@@ -4,7 +4,6 @@ from ltr.dataset import Got10k
 from ltr.data import sequence_sampler, SLTLoader
 import ltr.models.tracking.transt as transt_models
 from ltr.actors.slt_transt_actor import SLTTransTActor
-from ltr.actors.slt_transt_critic import SLTTransTCritic
 from ltr.trainers.slt_transt_trainer import SLTTransTTrainer
 from ltr import MultiGPU
 from ltr.admin import loading
