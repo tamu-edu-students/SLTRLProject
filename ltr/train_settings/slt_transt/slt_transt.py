@@ -1,6 +1,6 @@
 import torch
 
-from ltr.dataset import Lasot, Got10k, TrackingNet
+from ltr.dataset import Got10k
 from ltr.data import sequence_sampler, SLTLoader
 import ltr.models.tracking.transt as transt_models
 from ltr.actors.slt_transt_actor import SLTTransTActor
@@ -41,8 +41,6 @@ def run(settings):
     settings.featurefusion_layers = 4
 
     # Train datasets
-    # lasot_train = Lasot(settings.env.lasot_dir, split='train')
-    # got10k_train = Got10k(settings.env.got10k_dir, split='vottrain')
     got10k_train = Got10k(settings.env.got10k_dir, split='train')
 
     # trackingnet_train = TrackingNet(settings.env.trackingnet_dir, set_ids=list(range(4)))

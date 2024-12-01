@@ -1,5 +1,5 @@
 import torch
-from ltr.dataset import Lasot, MSCOCOSeq, Got10k, TrackingNet
+from ltr.dataset import Got10k
 from ltr.data import processing, sampler, LTRLoader
 import ltr.models.tracking.transt as transt_models
 from ltr import actors
@@ -36,10 +36,7 @@ def run(settings):
     settings.featurefusion_layers = 4
 
     # Train datasets
-    lasot_train = Lasot(settings.env.lasot_dir, split='train')
     got10k_train = Got10k(settings.env.got10k_dir, split='vottrain')
-    trackingnet_train = TrackingNet(settings.env.trackingnet_dir, set_ids=list(range(4)))
-    coco_train = MSCOCOSeq(settings.env.coco_dir, version='2017')
 
     # The joint augmentation transform, that is applied to the pairs jointly
     transform_joint = tfm.Transform(tfm.ToGrayscale(probability=0.05))
@@ -60,7 +57,7 @@ def run(settings):
                                                       joint_transform=transform_joint)
 
     # The sampler for training
-    dataset_train = sampler.TransTSampler([lasot_train, got10k_train, coco_train, trackingnet_train], [1,1,1,1],
+    dataset_train = sampler.TransTSampler([got10k_train], [1],
                                 samples_per_epoch=1000*settings.batch_size, max_gap=100, processing=data_processing_train)
 
     # The loader for training
