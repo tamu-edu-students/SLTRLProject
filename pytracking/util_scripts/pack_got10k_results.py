@@ -30,6 +30,7 @@ def pack_got10k_results(tracker_name, param_name, output_name=None, split='Test'
         os.makedirs(output_path)
 
     results_path = env_settings().results_path
+
     for i in range(1,181):
         seq_name = 'GOT-10k_{}_{:06d}'.format(split, i)
 
@@ -38,9 +39,14 @@ def pack_got10k_results(tracker_name, param_name, output_name=None, split='Test'
             os.makedirs(seq_output_path)
 
         for run_id in range(3):
-            res = np.loadtxt('{}/{}/{}_{:03d}/{}.txt'.format(results_path, tracker_name, param_name, run_id, seq_name), dtype=np.float64)
+            # res = np.loadtxt('{}/{}/{}_{:03d}/{}.txt'.format(results_path, tracker_name, param_name, run_id, seq_name), dtype=np.float64)
+            res = np.loadtxt('{}/{}/{}/{}.txt'.format(results_path, tracker_name, param_name, seq_name), dtype=np.float64)
+
+            # times = np.loadtxt(
+            #     '{}/{}/{}_{:03d}/{}_time.txt'.format(results_path, tracker_name, param_name, run_id, seq_name),
+            #     dtype=np.float64)
             times = np.loadtxt(
-                '{}/{}/{}_{:03d}/{}_time.txt'.format(results_path, tracker_name, param_name, run_id, seq_name),
+                '{}/{}/{}/{}_time.txt'.format(results_path, tracker_name, param_name, seq_name),
                 dtype=np.float64)
 
             np.savetxt('{}/{}_{:03d}.txt'.format(seq_output_path, seq_name, run_id+1), res, delimiter=',', fmt='%f')
@@ -48,6 +54,8 @@ def pack_got10k_results(tracker_name, param_name, output_name=None, split='Test'
 
     # Generate ZIP file
     shutil.make_archive(output_path, 'zip', output_path)
+
+    print(output_path)
 
     # Remove raw text files
     shutil.rmtree(output_path)
