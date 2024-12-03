@@ -79,6 +79,14 @@ python pytracking/util_scripts/pack_got10k_results.py ac_slt_transt ac_slt_trans
 ```
 python ltr/run_training.py ac_slt_transt ac_slt_transt
 ```
+
+## Results
+![image](https://github.com/user-attachments/assets/00205559-66f0-44b6-8cf5-e8f8fc1348a1)
+
+In the results, it is evident that SLT improves on the Baseline. 
+In case of our A2C SLT, we failed to train it for long enough, but it still surpasses the Baseline on all measures and reaches pretty close to the SLT Tracker.
+
+
 ## Acknowledgments
 SLTTracking was not developed by us, it is taken from the 2022 ECCV paper by Kim, Minji et al.
 ```bibtex
