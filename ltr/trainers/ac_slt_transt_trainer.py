@@ -8,9 +8,8 @@ import torch
 import time
 import numpy as np
 
-
-class SLTTransTTrainer(BaseTrainer):
-    def __init__(self, actor, loaders, optimizer, settings, lr_scheduler=None):
+class ACSLTTransTTrainer(BaseTrainer):
+    def __init__(self, actor, loaders, optimizer, settings, c_optimizer, lr_scheduler=None):
         """
         args:
             actor - The actor for training the network
@@ -29,6 +28,8 @@ class SLTTransTTrainer(BaseTrainer):
 
         # Initialize statistics variables
         self.stats = OrderedDict({loader.name: None for loader in self.loaders})
+
+        self.c_optimizer = c_optimizer;
 
         # Initialize tensorboard
         tensorboard_writer_dir = os.path.join(self.settings.env.tensorboard_dir, self.settings.project_path)
@@ -90,6 +91,7 @@ class SLTTransTTrainer(BaseTrainer):
             cursor = 0
             bs = self.settings.num_seq_backward
             self.optimizer.zero_grad()
+            self.c_optimizer.zero_grad()
             while cursor < num_seq:
                 model_inputs = {}
                 model_inputs['slt_loss_weight'] = self.settings.slt_loss_weight
@@ -130,6 +132,7 @@ class SLTTransTTrainer(BaseTrainer):
                 stats['grad_norm'] = total_norm
 
             self.optimizer.step()
+            self.c_optimizer.step()
 
             # Logging
             miou = np.mean(miou_record)

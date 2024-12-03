@@ -11,6 +11,7 @@ pytracking/evaluation/got10k/*
 pytracking/evaluation/results/*
 ltr/ltr/*
 ltr/slt_transt/*
+ltr/ac_slt_transt/*
 checkpoints/*
 results
 **/.ipynb_checkpoints/**

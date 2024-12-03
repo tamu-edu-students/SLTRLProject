@@ -3,8 +3,9 @@ import torch
 from ltr.dataset import Got10k
 from ltr.data import sequence_sampler, SLTLoader
 import ltr.models.tracking.transt as transt_models
-from ltr.actors.slt_transt_actor import SLTTransTActor
-from ltr.trainers.slt_transt_trainer import ACSLTTransTTrainer
+from ltr.actors.slt_transt_ac import SLTTransTAC
+from ltr.trainers.ac_slt_transt_trainer import ACSLTTransTTrainer
+from pytracking.tracker.ac_slt_transt import CriticNetwork
 from ltr import MultiGPU
 from ltr.admin import loading
 
@@ -15,14 +16,14 @@ from pytracking.features.net_wrappers import NetWithBackbone
 def run(settings):
     # Most common settings are assigned in the settings struct
     settings.device = 'cuda'
-    settings.description = 'SLT-TransT with default settings.'
+    settings.description = 'Actor Critic based SLT-TransT with default settings.'
     settings.num_workers = 4
     settings.multi_gpu = True
     settings.print_interval = 1
 
     # SLT settings
     # settings.num_epoch = 120
-    settings.num_epoch = 2
+    settings.num_epoch = 10
     settings.num_per_epoch = 1000
     settings.num_seq = 8
     settings.num_seq_backward = 2
@@ -42,16 +43,10 @@ def run(settings):
     # Train datasets
     got10k_train = Got10k(settings.env.got10k_dir, split='train')
 
-    # trackingnet_train = TrackingNet(settings.env.trackingnet_dir, set_ids=list(range(4)))
-
     # Train sampler and loader
     settings.max_gap = 300
     settings.max_interval = 10
     settings.interval_prob = 0.3
-    # dataset_train = sequence_sampler.SequenceSampler([lasot_train, got10k_train, trackingnet_train], [1,1,1],
-    #                                     samples_per_epoch=settings.num_per_epoch, max_gap=settings.max_gap, max_interval=settings.max_interval,
-    #                                                  num_search_frames=settings.num_frames, num_template_frames=1,
-    #                                                  frame_sample_mode='random_interval', prob=settings.interval_prob)
     dataset_train = sequence_sampler.SequenceSampler([got10k_train], [1],
                                         samples_per_epoch=settings.num_per_epoch, max_gap=settings.max_gap, max_interval=settings.max_interval,
                                                      num_search_frames=settings.num_frames, num_template_frames=1,
@@ -62,6 +57,7 @@ def run(settings):
 
     # Create network and actor
     model = transt_models.transt_resnet50(settings)
+    critic = CriticNetwork(settings.num_seq * 2 * 3 * 256 * 256, [128, settings.num_seq * 2 * 1024 * 4]).to(settings.device)
 
     # Wrap the network for multi GPU training
     if settings.multi_gpu:
@@ -79,7 +75,7 @@ def run(settings):
     params.temp = 4.0
     params.net = NetWithBackbone(net_path='transt.pth',
                                  use_gpu=params.use_gpu)
-    actor = SLTTransTActor(net=model, objective=objective, params=params)
+    actor = SLTTransTAC(net=model, objective=objective, params=params, critic=critic)
 
     # Optimizer
     param_dicts = [
@@ -87,18 +83,30 @@ def run(settings):
         {
             "params": [p for n, p in model.named_parameters() if "backbone" in n and p.requires_grad],
             "lr": 1e-6,
-        },
+        }
     ]
     optimizer = torch.optim.AdamW(param_dicts, lr=1e-5,
                                   weight_decay=1e-4)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 100)
 
+    #Critic Optimizer
+    critic_dict = [
+        {
+            "params": [
+                p for n, p in critic.named_parameters() if "backbone" in n and p.requires_grad
+            ]
+        }
+    ]
+    c_optimizer = torch.optim.AdamW(critic_dict, lr=1e-5,
+                                  weight_decay=1e-4)
+    c_lr_scheduler = torch.optim.lr_scheduler.StepLR(c_optimizer, 100)
+    
     # Create trainer
-    trainer = ACSLTTransTTrainer(actor, [loader_train], optimizer, settings, lr_scheduler)
+    trainer = ACSLTTransTTrainer(actor, [loader_train], optimizer, settings, c_optimizer, lr_scheduler)
 
     # Load pretrained model
     net = actor.net.module if settings.multi_gpu else actor.net
-    checkpoint_dict = loading.torch_load_legacy('/mnt/c/Users/91993/Desktop/TAMU/slt/SLTRLProject/checkpoints/transt.pth')
+    checkpoint_dict = loading.torch_load_legacy('/home/ubuntu/finalSubmissionRepo/SLTRLProject/checkpoints/transt.pth')
     net.load_state_dict(checkpoint_dict['net'])
 
     # Run training (set fail_safe=False if you are debugging)

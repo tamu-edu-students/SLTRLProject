@@ -22,7 +22,7 @@ def run(settings):
 
     # SLT settings
     # settings.num_epoch = 120
-    settings.num_epoch = 2
+    settings.num_epoch = 10
     settings.num_per_epoch = 1000
     settings.num_seq = 8
     settings.num_seq_backward = 2
@@ -98,7 +98,7 @@ def run(settings):
 
     # Load pretrained model
     net = actor.net.module if settings.multi_gpu else actor.net
-    checkpoint_dict = loading.torch_load_legacy('/mnt/c/Users/91993/Desktop/TAMU/slt/SLTRLProject/checkpoints/transt.pth')
+    checkpoint_dict = loading.torch_load_legacy('/home/ubuntu/finalSubmissionRepo/SLTRLProject/checkpoints/transt.pth')
     net.load_state_dict(checkpoint_dict['net'])
 
     # Run training (set fail_safe=False if you are debugging)

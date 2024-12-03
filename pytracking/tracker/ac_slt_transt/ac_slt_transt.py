@@ -1,6 +1,7 @@
 from pytracking.tracker.base import BaseTracker, SiameseTracker
 import torch
 import torch.nn.functional as F
+from torch import nn
 import math
 import time
 import numpy as np
@@ -16,6 +17,28 @@ from torch.distributions.categorical import Categorical
 def stable_inverse_sigmoid(x, eps=0.01):
     x = (x * (1 - eps * 2)) + eps
     return torch.log(x / (1 - x))
+
+'''
+    Parts of the Critic Network were taken from https://github.com/wahibkapdi/csce642-deepRL/blob/master/Solvers/A2C.py
+    and edited by us.
+'''
+class CriticNetwork(nn.Module):
+    def __init__(self, obs_dim, hidden_sizes):
+        super().__init__()
+        sizes = [obs_dim] + hidden_sizes
+        self.layers = nn.ModuleList()
+        # Shared layers
+        for i in range(len(sizes) - 1):
+            self.layers.append(nn.Linear(sizes[i], sizes[i + 1]))
+
+    def forward(self, obs):
+        x = torch.cat([obs], dim=-1)
+        for i in range(len(self.layers) - 1):
+            x = F.relu(self.layers[i](x))
+        # Critic head
+        value = self.layers[-1](x)
+
+        return torch.squeeze(value, -1)
 
 class ACSLTTransT(SiameseTracker):
 
@@ -63,6 +86,7 @@ class ACSLTTransT(SiameseTracker):
 
         # The TransT network
         self.net = self.params.net
+        self.critic = self.params.critic
 
         # Convert bbox (x1, y1, w, h) -> (cx, cy, w, h)
         template_bbox = bbutils.batch_xywh2center2(template_bbox) # ndarray:(2*num_seq,4)
@@ -96,6 +120,8 @@ class ACSLTTransT(SiameseTracker):
         z_crop = torch.cat(z_crop_list, dim=0)  # Tensor(2*num_seq,3,128,128)
 
         self.net.template_batch(z_crop)
+
+        self.critic = CriticNetwork(z_crop.shape[0] * 3 * 256 * 256, [128, z_crop.shape[0] * 1024 * 4]).to(self.params.device)
 
         out = {'template_images': z_crop} # Tensor(2*num_seq,3,128,128)
         return out
@@ -141,6 +167,10 @@ class ACSLTTransT(SiameseTracker):
         # outputs: {'pred_logits': Tensor(2*num_seq,1024,2),'pred_boxes': Tensor(2*num_seq,1024,4)}
         outputs = self.net.track_batch(x_crop)
 
+        x_crop_flat = x_crop.flatten().to(self.params.device)
+
+        critic_values = self.critic(x_crop_flat)
+        
         # sigmoid
         cls = outputs['pred_logits']
         if self.params.no_neg_logit:
@@ -168,11 +198,18 @@ class ACSLTTransT(SiameseTracker):
             selected_indices = torch.cat([max_indices[:bs], sampled_indices[bs:]], dim=0)
         selected_indices = selected_indices.detach()
 
-        # Convert bbox (2*num_seq,1024,4) tensor -> numpy
         pred_bbox = outputs['pred_boxes'].data.cpu().numpy()
         bbox = pred_bbox[range(len(img)), selected_indices.cpu().numpy(), :]
 
         bbox = bbox * s_x.reshape(-1, 1)
+        
+        # Reshape critic_values to match pred_bbox shape
+        critic_bbox = critic_values.reshape(pred_bbox.shape)
+        
+        # Use tensors for selecting critics
+        selected_critics = critic_bbox[range(len(img)), selected_indices, :]  # Tensor indexing
+        selected_critics = selected_critics.data.cpu().numpy()
+
         cx = bbox[:, 0] + self.center_pos[:, 0] - s_x/2
         cy = bbox[:, 1] + self.center_pos[:, 1] - s_x/2
         width = bbox[:, 2]
@@ -189,10 +226,15 @@ class ACSLTTransT(SiameseTracker):
 
         bbox = np.stack([cx - width / 2, cy - height / 2, width, height], 1)
 
+        
+
+
         out = {'search_images': x_crop,  # tensor(num_seq, 3, 256, 256)
                'pred_bboxes': bbox,  # np.array(num_seq, 4)
                'selected_indices': selected_indices.cpu(),  # np.array(num_seq)
-               'gt_in_crop': torch.tensor(np.stack(gt_in_crop_list, axis=0), dtype=torch.float)}
+               'gt_in_crop': torch.tensor(np.stack(gt_in_crop_list, axis=0), dtype=torch.float),
+               'critic_bboxes': selected_critics
+              }
 
         return out
 

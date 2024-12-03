@@ -6,6 +6,6 @@ def parameters():
     params.debug = 0
     params.visualization = False
     params.use_gpu = True
-    net_name = '/mnt/c/Users/91993/Desktop/TAMU/slt/SLTRLProject/checkpoints/ac_slt_transt.pth'
+    net_name = '/home/ubuntu/finalSubmissionRepo/SLTRLProject/checkpoints/ltr/ac_slt_transt/ac_slt_transt/TransT_ep0009.pth.tar'
     params.net = NetWithBackbone(net_path=net_name, use_gpu=params.use_gpu)
     return params
