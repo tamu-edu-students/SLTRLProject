@@ -1,4 +1,5 @@
 ### [[Drive with Models and Raw Results](https://drive.google.com/drive/folders/1D8AcjTFxKo1hXOC-Ca_y3GaniPVK3yda?usp=drive_link)]
+### [[Detailed Project Report](./documentation/Improving%20Visual%20Object%20Tracking%20using%20Deep%20Reinforcement%20Learning.pdf)]
 
 This codebase was created as a submission for CSCE-642 at Texas A&M University by Dineth Gunawardena and Wahib Kapdi.
 
