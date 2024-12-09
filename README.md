@@ -1,18 +1,18 @@
 ### [[Drive with Models and Raw Results](https://drive.google.com/drive/folders/1D8AcjTFxKo1hXOC-Ca_y3GaniPVK3yda?usp=drive_link)]
 ### [[Detailed Project Report](./documentation/Improving%20Visual%20Object%20Tracking%20using%20Deep%20Reinforcement%20Learning.pdf)]
+### [[Video Summary of the work done and results](https://www.youtube.com/watch?v=75LUAj6q2V8)]
 
 This codebase was created as a submission for CSCE-642 at Texas A&M University by Dineth Gunawardena and Wahib Kapdi.
 
-##### DISLCLAIMER : This code base is based off of Kim Minji's Github repository [Here](https://github.com/byminji/SLTtrack) for SLTTracking. This repository provide a perfect framework to further improve the performance for TransT trackers by adding different RL techniques. We have created our implementation of A2C based SLT in this repository after stripping the repository down to only the necessary files.
+##### DISLCLAIMER : This code base is based off of Kim Minji's Github repository [Here](https://github.com/byminji/SLTtrack) for SLTTracking. This repository provide a perfect framework to further improve the performance for TransT tracker by using different RL techniques. We have created our implementation of A2C based SLT in this repository after stripping the repository down to only the necessary files.
 
 # Introduction
 
-Most visual object trackers use Frame Level Tracking. But this does not account for moving and intermediary frames with may have obstacles blocking the subject, motion blur or ambient occlusion. So our project aim to treat this problem as a sequential problem and use the frames and bounding boxes generated in the past as an input to our RL network.
+Traditional visual object trackers often rely on frame-level tracking, which struggles with challenges like occlusion, motion blur, or ambient conditions. This project addresses these issues by treating tracking as a sequential decision problem. By incorporating past frames and bounding boxes as inputs to a reinforcement learning (RL) network, we aim to reduce random perturbations and improve tracking robustness for difficult scenarios.
 
 # Improving Object Tracking Networks using Deep Reinforcement Learning
 
-The goal of this project is to improve the existing tracking networks using Reinforcement Learning Algorithms. 
-In this project we use Transformer Tracking or [TransT](https://github.com/chenxin-dlut/TransT) coupled with REINFORCE learning to improve performance on Visual Object Tracking Datasets. We use the [GOT10K](http://got-10k.aitestunion.com/) dataset for the same. Using the implementation suggested by [Kim, Minji et. al.](https://arxiv.org/pdf/2208.05810).
+This project seeks to enhance visual object tracking performance by integrating RL algorithms with existing tracking frameworks. Specifically, we use [Transformer Tracking (TransT)](https://github.com/chenxin-dlut/TransT) with sequence-level reinforcement learning. We trained and tested our models on the [GOT10K dataset](http://got-10k.aitestunion.com/), drawing on the implementation from [Kim et al. (2022)](https://arxiv.org/pdf/2208.05810).
 
 # Getting Started
 
@@ -82,10 +82,33 @@ python ltr/run_training.py ac_slt_transt ac_slt_transt
 ```
 
 ## Results
+
+| Model                      | Data Used       | AO   | SR50  | SR75  |
+|----------------------------|-----------------|-------|-------|-------|
+| TransT (Baseline)** [1]   | Multiple        | 66.2  | 75.5  | 58.5  |
+| SLT + TransT ([1])         | Multiple        | 72.0  | 81.6  | 68.3  |
+| SLT + TransT (Ours)        | GOT-10K         | 72.5  | 82.2  | 68.8  |
+| **A2C SLT + TransT**       | **GOT-10K**     | **70.5** | **79.9** | **66.3** |
+
+**Notes:**
+- *Multiple Dataset* represents a superset of the following publicly available datasets: TrackingNet, GOT-10k, LaSOT, ImageNet-VID, DAVIS, YouTube-VOS, MS-COCO, SBD, LVIS, ECSSD, MSRA10k, and HKU-IS.
+- ** Data that we did not verify, but taken directly from Kim et al. (2022) (See Acknowledgments).
+
 ![image](https://github.com/user-attachments/assets/00205559-66f0-44b6-8cf5-e8f8fc1348a1)
 
+**Description:** A screenshot of performance comparison of various models on the GOT-10k dataset. The table highlights the Average Overlap (AO), Success Rate at 50% (SR50), and Success Rate at 75% (SR75) metrics for the SLT-enhanced versions (as per the referenced paper and the current work), and the proposed A2C SLT + TransT method.
+
+
 In the results, it is evident that SLT improves on the Baseline. 
-In case of our A2C SLT, we failed to train it for long enough, but it still surpasses the Baseline on all measures and reaches pretty close to the SLT Tracker.
+In case of our A2C SLT, we failed to train it for long enough, but it still surpasses the Baseline on all measures and reaches pretty close to the SCST based SLT Tracker.
+
+## Work Yet to be done and further research
+
+- Explore other base trackers (e.g., Siamese trackers, TransDiMP).
+- Compare performance with different RL techniques (e.g., PPO, DDPG).
+- Add attention mechanisms for smoother tracking.
+- Implement real-time tracking capabilities.
+- Generate more visual results and user-friendly frontends.
 
 
 ## Acknowledgments
